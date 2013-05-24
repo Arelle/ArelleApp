@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<toolbar>
+	<item id="openDatabaseChooser" type="button" img="toolbarOpenDatabaseFolder.gif"/>
+	<item id="openDatabaseTable" type="button" img="toolbarOpenDatabaseTable.gif"/>
+	<item id="close" type="button" img="toolbarClose.gif"/>
+</toolbar>
