@@ -32,7 +32,7 @@ def viewAccessions(request):
             codetypeCounts.each{k,v->c<<[k,v].join(' - ')}
             [l.join(', '), c.join(', ')].join(', ')
         }
-        ['rows':g.V('_class','accessions').out.as('data').as('id').select{it.id}{
+        ['rows':g.V('_rlkey', 'semantic_root').out('accessions').out.as('data').as('id').select{it.id}{
             [it.filing_accession_number,
              it.accepted_timestamp,
              it.entry_url,it.creation_software?:'',

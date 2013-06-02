@@ -12,11 +12,12 @@ def viewProperties(request):
         dbConn.gDefAspectLabel + u"""
         def n = null
         def e = null
+        def _id = '""" + dbConn.id.strip() + u"""'
         try {
-            n = g.v(""" + dbConn.id + u""")
+            n = g.v(_id)
         } catch (Exception e1) {
             try {
-                e = g.e(""" + dbConn.id + u""")
+                e = g.e(_id)
             } catch (Exception e2) {
             }
         }
@@ -114,5 +115,10 @@ def viewProperties(request):
         }
         ['rows':rows]
     """)[u"results"][0]  # returned dict from Gremlin is in a list, just want the dict
+    # convert labels and values into uncompressed strings
+    for row in results['rows']:
+        cols = row['data']
+        for i in range(len(cols)):
+            cols[i] = dbConn.appString(cols[i])
     dbConn.close()
     return results

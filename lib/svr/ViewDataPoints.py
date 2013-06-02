@@ -20,6 +20,12 @@ def viewDataPoints(request):
              }
         ]
     """)[u"results"][0]  # returned dict from Gremlin is in a list, just want the dict
+    
+    # convert labels and values into uncompressed strings
+    for row in results['rows']:
+        cols = row['data']
+        for i in range(len(cols)):
+            cols[i] = dbConn.appString(cols[i])
     dbConn.close()
     return results
 

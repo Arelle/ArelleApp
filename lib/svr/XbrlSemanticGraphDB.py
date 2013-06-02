@@ -6,7 +6,7 @@ Created on May 19, 2013
 '''
 from __future__ import division
 from __future__ import with_statement
-import json, sys, urllib, io, socket
+import json, sys, urllib, io, socket, zlib
 from urllib import unquote
 from base64 import b64decode
 import urllib2 as proxyhandlers
@@ -121,6 +121,11 @@ class XbrlSemanticGraphDatabaseConnection:
             except socket.timeout:
                 t = t + 2  # relax - try again with longer timeout
         raise Exception(u"Opening of Database not successful: timed out") 
+    
+    def appString(self, dbString):
+        if isinstance(dbString, unicode) and dbString.startswith(u'x\x9c'): # compressed
+            return zlib.decompress(''.join(chr(ord(u)) for u in dbString)).encode('utf-8')
+        return dbString
 
     @property
     def gDefAspectLabel(self):

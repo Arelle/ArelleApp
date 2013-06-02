@@ -75,7 +75,7 @@ def viewRelationships(request):
                                        it.cube_closed?:'',
                                        it.aspect_value_usable?:'']]
                     if (targetAspectProxy.outE('rel').has('rel_set', relSetId)) {
-                        row['rows'] = relSetRows(relSetId,
+                        row['rows'] = relSetRows(it.target_rel_set ?: relSetId,
                                                  it.target_linkrole ?: linkrole,
                                                  targetAspectProxy.outE('rel')
                                                          .has('rel_set', relSetId)
