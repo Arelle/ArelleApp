@@ -6,7 +6,7 @@ Created on May 19, 2013
 '''
 from __future__ import division
 from __future__ import with_statement
-import json, sys, urllib, io, socket, zlib
+import json, sys, urllib, io, socket, zlib, re
 from urllib import unquote
 from base64 import b64decode
 import urllib2 as proxyhandlers
@@ -18,6 +18,8 @@ TRACEGREMLINFILE = r"c:\temp\appsvrtrace.log"  # uncomment to trace SQL on conne
 HTTPHEADERS = {'User-agent':   'Arelle/1.0',
                'Accept':       'application/json',
                'Content-Type': 'application/json'}
+
+normalizeSpacesPattern = re.compile(r"[ ]{2,}")
 
 def testConnection(request):
     # determine if postgres port
@@ -64,12 +66,12 @@ class XbrlSemanticGraphDatabaseConnection:
             raise
         
     def execute(self, activity, script, params=None):
-        gremlin = {"script": script}
+        gremlin = {"script": normalizeSpacesPattern.sub(' ', script)}
         if params:
             gremlin[u"params"] = params
         if TRACEGREMLINFILE:
             with io.open(TRACEGREMLINFILE, u"a", encoding=u'utf-8') as fh:
-                fh.write(u"\n\n>>> sent: \n{0}".format(unicode(gremlin)))
+                fh.write(u"\n\n{0}>>> sent: \n{1}".format(unicode(activity), unicode(gremlin)))
         request = proxyhandlers.Request(self.url + "/tp/gremlin",
                                         data=json.dumps(gremlin, ensure_ascii=False).encode('utf-8'),
                                         headers=HTTPHEADERS)
@@ -87,7 +89,7 @@ class XbrlSemanticGraphDatabaseConnection:
                 fp.close()
         if TRACEGREMLINFILE:
             with io.open(TRACEGREMLINFILE, u"a", encoding=u'utf-8') as fh:
-                fh.write(u"\n\n>>> received: \n{0}".format(unicode(results)))
+                fh.write(u"\n\n{0}>>> received: \n{1}".format(unicode(activity), unicode(results)))
         if results['success'] == False:
             raise Exception(u"%(activity)s not successful: %(error)s" % {
                             u"activity": activity, "error": results.get(u'error')}) 
@@ -122,11 +124,6 @@ class XbrlSemanticGraphDatabaseConnection:
                 t = t + 2  # relax - try again with longer timeout
         raise Exception(u"Opening of Database not successful: timed out") 
     
-    def appString(self, dbString):
-        if isinstance(dbString, unicode) and dbString.startswith(u'x\x9c'): # compressed
-            return zlib.decompress(''.join(chr(ord(u)) for u in dbString)).encode('utf-8')
-        return dbString
-
     @property
     def gDefAspectLabel(self):
         return u"""
@@ -146,5 +143,14 @@ class XbrlSemanticGraphDatabaseConnection:
             }
         """
 
-        
+def decompressResults(results):
+    # convert labels and values into uncompressed strings
+    for row in results.get('rows', ()):
+        cols = row.get('data', ())
+        for i in range(len(cols)):
+            col = cols[i]
+            if isinstance(col, unicode) and col.startswith(u'x\x9c'): # compressed
+                cols[i] = zlib.decompress(''.join(chr(ord(u)) for u in col)).encode('utf-8')
+        decompressResults(row)
+
     

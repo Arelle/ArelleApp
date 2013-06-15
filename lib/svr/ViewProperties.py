@@ -4,7 +4,7 @@ Created on May 19, 2013
 @author: Mark V Systems Limited
 (c) Copyright 2013 Mark V Systems Limited, All rights reserved.
 '''
-from XbrlSemanticGraphDB import XbrlSemanticGraphDatabaseConnection
+from XbrlSemanticGraphDB import XbrlSemanticGraphDatabaseConnection, decompressResults
 
 def viewProperties(request):
     dbConn = XbrlSemanticGraphDatabaseConnection(request)
@@ -15,6 +15,8 @@ def viewProperties(request):
         def _id = '""" + dbConn.id.strip() + u"""'
         try {
             n = g.v(_id)
+            if (!n)
+                e = g.e(_id)
         } catch (Exception e1) {
             try {
                 e = g.e(_id)
@@ -84,12 +86,12 @@ def viewProperties(request):
                 rows << ['id':5, 'data':['data type', dataTypeIt.hasNext() ? dataTypeIt.next().name : '']]
                 rows << ['id':6, 'data':['base type', baseTypeIt.hasNext() ? baseTypeIt.next().name : '']]
             }
-            def relSet = v(e.rel_set)
+            def relSet = g.v(e.rel_set)
             rows << ['id':7, 'data':['linkrole', relSet.linkrole?:'']]
             rows << ['id':8, 'data':['definition', relSet.linkdefinition?:'']]
             rows << ['id':9, 'data':['arcrole', relSet.arcrole?:'']]
-            if (n.hasNot('preferred_label', null)) { \
-                rows << ['id':10, 'data':['preferred label', n.preferred_label?:'']]
+            if (e.hasNot('preferred_label', null)) { \
+                rows << ['id':10, 'data':['preferred label', e.preferred_label?:'']]
             }
         } else if (_label == 'root') { \
             def a = e.inV.next()
@@ -115,10 +117,6 @@ def viewProperties(request):
         }
         ['rows':rows]
     """)[u"results"][0]  # returned dict from Gremlin is in a list, just want the dict
-    # convert labels and values into uncompressed strings
-    for row in results['rows']:
-        cols = row['data']
-        for i in range(len(cols)):
-            cols[i] = dbConn.appString(cols[i])
+    decompressResults(results)
     dbConn.close()
     return results

@@ -118,8 +118,8 @@ def viewRelationships(request):
 def selectRelationships(request):
     dbConn = XbrlSemanticGraphDatabaseConnection(request)
     results = dbConn.execute(u"Select Relationships " + os.path.basename(dbConn.arcrole), u"""
-        def n = g.v(""" + dbConn.id + u""")
-        def _class = n._class
+        def n = g.v('""" + dbConn.id + u"""')
+        def _class = n ? n._class : null
         def aspectProxy
         def result = 0
         if (_class == 'aspect_proxy') {

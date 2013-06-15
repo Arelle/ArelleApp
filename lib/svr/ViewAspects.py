@@ -11,7 +11,7 @@ def viewAspects(request):
     results = dbConn.execute(u"View Aspects", 
         dbConn.gDefAspectLabel + u"""
         aspectRows = []
-        g.v(""" + dbConn.accessionId + u""").out('dts').out('dts_aspect_proxy').
+        g.v('""" + dbConn.accessionId + u"""').out('dts').out('dts_aspect_proxy').
                 order{aspectLabel(it.a)<=>aspectLabel(it.b)}.each{
             aspectProxy = it
             label = aspectLabel(it)
@@ -34,8 +34,14 @@ def viewAspects(request):
 def selectAspects(request):
     dbConn = XbrlSemanticGraphDatabaseConnection(request)
     results = dbConn.execute(u"Select Aspects", u"""
-        def n = g.v(""" + dbConn.id + u""")
-        def _class = n._class
+        def _id = '""" + dbConn.id.strip() + u"""'
+        def n = g.v(_id)
+        if (!n) {
+            def e = g.e(_id)
+            if (e && e.label == 'rel')
+                n = e.inV.next()
+        }
+        def _class = n ? n._class : null
         def result = 0
         if (_class == 'data_point') { 
             result = n.out('base_item')[0].id;
