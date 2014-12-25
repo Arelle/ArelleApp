@@ -7,6 +7,7 @@ This module is Arelle's controller for app server (web service and ajax operatio
 (c) Copyright 2013 Mark V Systems Limited, All rights reserved.
 '''
 import time, datetime, os, shlex, sys, traceback, threading, json
+from datetime import datetime
 from optparse import OptionParser, SUPPRESS_HELP
 from webserver.bottle import route, get, post, request, response, run, static_file
 import Version
@@ -45,61 +46,61 @@ def main():
     
     usage = u"usage: %prog [options]"
     
-    parser = OptionParser(usage, version=u"Arelle(r) {0}".format(Version.version))
-    parser.add_option(u"--logFile", action=u"store", dest=u"logFile",
-                      help=u"Write log messages into file, otherwise they go to standard output.  " 
-                           u"If file ends in .xml it is xml-formatted, otherwise it is text. ")
-    parser.add_option(u"--logfile", action=u"store", dest=u"logFile", help=SUPPRESS_HELP)
-    parser.add_option(u"--logFormat", action=u"store", dest=u"logFormat",
-                      help=u"Logging format for messages capture, otherwise default is \"[%(messageCode)s] %(message)s - %(file)s\".")
-    parser.add_option(u"--logformat", action=u"store", dest=u"logFormat", help=SUPPRESS_HELP)
-    parser.add_option(u"--logLevel", action=u"store", dest=u"logLevel",
-                      help=u"Minimum level for messages capture, otherwise the message is ignored.  " 
-                           u"Current order of levels are debug, info, info-semantic, warning, warning-semantic, warning, assertion-satisfied, inconsistency, error-semantic, assertion-not-satisfied, and error. ")
-    parser.add_option(u"--loglevelu", action=u"store", dest=u"logLevel", help=SUPPRESS_HELP)
-    parser.add_option(u"--logLevelFilter", action=u"store", dest=u"logLevelFilter",
-                      help=u"Regular expression filter for logLevel.  " 
-                           u"(E.g., to not match *-semantic levels, logLevelFilter=(?!^.*-semantic$)(.+). ")
-    parser.add_option(u"--loglevelfilter", action=u"store", dest=u"logLevelFilter", help=SUPPRESS_HELP)
-    parser.add_option(u"--logCodeFilter", action=u"store", dest=u"logCodeFilter",
-                      help=u"Regular expression filter for log message code.u")
-    parser.add_option(u"--logcodefilter", action=u"store", dest=u"logCodeFilter", help=SUPPRESS_HELP)
-    parser.add_option(u"--webserver", action=u"store", dest=u"webserver",
-                      help=u"start web server on host:port[:server] for REST and web access, e.g., --webserver locahost:8080, "
-                           u"or specify nondefault a server name, such as cherrypy, --webserver locahost:8080:cherrypy")
-    parser.add_option(u"-a", u"--about",
-                      action=u"store_true", dest=u"about",
-                      help=u"Show product version, copyright, and license.")
+    parser = OptionParser(usage, version="Arelle(r) {0}".format(Version.version))
+    parser.add_option("--logFile", action="store", dest="logFile",
+                      help="Write log messages into file, otherwise they go to standard output.  " 
+                           "If file ends in .xml it is xml-formatted, otherwise it is text. ")
+    parser.add_option("--logfile", action="store", dest="logFile", help=SUPPRESS_HELP)
+    parser.add_option("--logFormat", action="store", dest="logFormat",
+                      help="Logging format for messages capture, otherwise default is \"[%(messageCode)s] %(message)s - %(file)s\".")
+    parser.add_option("--logformat", action="store", dest="logFormat", help=SUPPRESS_HELP)
+    parser.add_option("--logLevel", action="store", dest="logLevel",
+                      help="Minimum level for messages capture, otherwise the message is ignored.  " 
+                           "Current order of levels are debug, info, info-semantic, warning, warning-semantic, warning, assertion-satisfied, inconsistency, error-semantic, assertion-not-satisfied, and error. ")
+    parser.add_option("--loglevel", action="store", dest="logLevel", help=SUPPRESS_HELP)
+    parser.add_option("--logLevelFilter", action="store", dest="logLevelFilter",
+                      help="Regular expression filter for logLevel.  " 
+                           "(E.g., to not match *-semantic levels, logLevelFilter=(?!^.*-semantic$)(.+). ")
+    parser.add_option("--loglevelfilter", action="store", dest="logLevelFilter", help=SUPPRESS_HELP)
+    parser.add_option("--logCodeFilter", action="store", dest="logCodeFilter",
+                      help="Regular expression filter for log message code.")
+    parser.add_option("--logcodefilter", action="store", dest="logCodeFilter", help=SUPPRESS_HELP)
+    parser.add_option("--webserver", action="store", dest="webserver",
+                      help="start web server on host:port[:server] for REST and web access, e.g., --webserver locahost:8080, "
+                           "or specify nondefault a server name, such as cherrypy, --webserver locahost:8080:cherrypy")
+    parser.add_option("-a", "--about",
+                      action="store_true", dest="about",
+                      help="Show product version, copyright, and license.")
     
     if args is None and isGAE:
-        args = [u"--webserver=::gae"]
+        args = ["--webserver=::gae"]
         
     (options, leftoverArgs) = parser.parse_args(args)
     if options.about:
-        print( (u"\narelle(r) {0}\n\n"
-                u"An open source XBRL platform\nu"
-                u"(c) 2010-2013 Mark V Systems Limited\n"
-                u"All rights reserved\nhttp://www.arelle.org\nsupport@arelle.org\n\n"
-                u"Licensed under the Apache License, Version 2.0 (the \"License\"); "
-                u"you may not \nuse this file except in compliance with the License.  "
-                u"You may obtain a copy \nof the License at "
-                u"'http://www.apache.org/licenses/LICENSE-2.0'\n\n"
-                u"Unless required by applicable law or agreed to in writing, software \n"
-                u"distributed under the License is distributed on an \"AS IS\" BASIS, \n"
-                u"WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  \n"
-                u"See the License for the specific language governing permissions and \n"
-                u"limitations under the License."
-                u"\n\nIncludes:"
-                u"\n   Python(r) (c) 2001-2013 Python Software Foundation"
-                u"\n   Bottle (c) 2011-2013 Marcel Hellkamp"
+        print( ("\narelle(r) {0}\n\n"
+                "An open source XBRL platform\n"
+                "(c) 2010-2015 Mark V Systems Limited\n"
+                "All rights reserved\nhttp://www.arelle.org\nsupport@arelle.org\n\n"
+                "Licensed under the Apache License, Version 2.0 (the \"License\"); "
+                "you may not \nuse this file except in compliance with the License.  "
+                "You may obtain a copy \nof the License at "
+                "'http://www.apache.org/licenses/LICENSE-2.0'\n\n"
+                "Unless required by applicable law or agreed to in writing, software \n"
+                "distributed under the License is distributed on an \"AS IS\" BASIS, \n"
+                "WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  \n"
+                "See the License for the specific language governing permissions and \n"
+                "limitations under the License."
+                "\n\nIncludes:"
+                "\n   Python(r) (c) 2001-2013 Python Software Foundation"
+                "\n   Bottle (c) 2011-2013 Marcel Hellkamp"
                 "{1}"
                 ).format(Version.version))
     elif len(leftoverArgs) != 0:
-        parser.error(u"incorrect arguments, please try\n  python CntlrCmdLine.py --help")
+        parser.error("incorrect arguments, please try\n  python CntlrCmdLine.py --help")
     elif options.webserver:
         # cntlr.startLogging(logFileName='logToBuffer')
-        host, sep, portServer = options.webserver.partition(u":")
-        port, sep, server = portServer.partition(u":")
+        host, sep, portServer = options.webserver.partition(":")
+        port, sep, server = portServer.partition(":")
         if server:
             run(host=host, port=port or 80, server=server)
         else:
@@ -111,7 +112,7 @@ def arelleIcon():
     
     :returns: ico -- Icon file for browsers
     """
-    return static_file(u"arelle.ico", root=imagesDir)
+    return static_file("arelle.ico", root=imagesDir)
 
 @route(u'/')
 def image():
@@ -137,15 +138,15 @@ def uiFile(uiFilePath):
     """
     return static_file(uiFilePath, root=uiDir)
 
-from XbrlSemanticGraphDB import testConnection
+from XbrlSemanticDB import testConnection
 @route(u'/testDBconnection')
 def testDBconnection():
     return jsonResults(testConnection)
 
-from ViewAccessions import viewAccessions
-@route(u'/grid/accessions')
-def gridAccessions():
-    return jsonResults(viewAccessions)
+from ViewFilings import viewFilings
+@route(u'/grid/filings')
+def gridFilings():
+    return jsonResults(viewFilings)
 
 from ViewDTS import viewDTS
 @route(u'/grid/DTS')
@@ -304,9 +305,9 @@ def tableRows(lines, header=None):
     :type header: str
     :returns: html - <table> html string.
     """
-    return u'<table cellspacing="0" cellpadding="4">%s\n</table>' % (
-            (u"<tr><th>%s</th></tr>" % header if header else "") + 
-            u"\n".join(u"<tr><td>%s</td></tr>" % line.replace(u"&",u"&amp;").replace(u"<",u"&lt;") for line in lines))
+    return '<table cellspacing="0" cellpadding="4">%s\n</table>' % (
+            ("<tr><th>%s</th></tr>" % header if header else "") + 
+            "\n".join("<tr><td>%s</td></tr>" % line.replace("&","&amp;").replace("<","&lt;") for line in lines))
 
 def errorReport(errors, media="html"):
     """Wraps lines of error text into specified media type for return of result to a request.
@@ -317,20 +318,25 @@ def errorReport(errors, media="html"):
     :type media: str
     :returns: html - <table> html string.
     """
-    if media == u"text":
+    if media == "text":
         response.content_type = u'text/plain; charset=UTF-8'
         return '\n'.join(errors)
     else:
         response.content_type = u'text/html; charset=UTF-8'
         return htmlBody(tableRows(errors, header="Messages"))
 
+def jsonSerializer(obj):
+    if isinstance(obj, datetime):
+        serial = obj.isoformat()
+        return serial
+    
 def jsonResults(jsonCompositionFunction):
     try:
         jsonResults = jsonCompositionFunction(request)
         response.content_type = u'application/json; charset=UTF-8'
-        return json.dumps( jsonResults )
+        return json.dumps( jsonResults, default=jsonSerializer )
     except Exception as ex:
         return errorReport([str(ex)])
     
-if __name__ == u"__main__":
+if __name__ == "__main__":
     main()

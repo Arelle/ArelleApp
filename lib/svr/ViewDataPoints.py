@@ -4,59 +4,45 @@ Created on May 19, 2013
 @author: Mark V Systems Limited
 (c) Copyright 2013 Mark V Systems Limited, All rights reserved.
 '''
-from XbrlSemanticGraphDB import XbrlSemanticGraphDatabaseConnection, decompressResults
+from XbrlSemanticDB import XbrlSemanticDatabaseConnection, decompressResults
 
 def viewDataPoints(request):
-    dbConn = XbrlSemanticGraphDatabaseConnection(request)
-    results = dbConn.execute(u"View Data Points", 
-        dbConn.gDefAspectLabel + u"""
-        ['rows':g.v('""" + dbConn.accessionId + u"""').out('entry_document')
-            .out('data_points').out('data_point')
-            .order{it.a.source_line <=> it.b.source_line}
-            .as('data').as('id').select{it.id}{
-               [aspectLabel(it.out('base_item')[0]),
-                   it.source_line,it.context?:'', it.unit?:'',
-                   it.effective_value?:it.value?:'']
-             }
-        ]
-    """)[u"results"][0]  # returned dict from Gremlin is in a list, just want the dict
-    
-    decompressResults(results)
+    dbConn = XbrlSemanticDatabaseConnection(request)
+    results = dbConn.execute("View Data Points", """
+        SELECT d.datapoint_id, a.name, d.source_line, d.context_xml_id, u.xml_id, d.effective_value, d.value 
+        FROM report r
+        JOIN data_point d ON r.filing_id = {0} AND 
+            d.document_id = r.report_data_doc_id 
+        JOIN aspect a ON a.aspect_id = d.aspect_id
+        LEFT OUTER JOIN unit u ON u.unit_id = d.unit_id
+        ORDER BY d.source_line 
+        """.format(dbConn.filingId))
     dbConn.close()
-    return results
+    return {"rows": [{"id": result[0], "data": [result[1], result[2], result[3], result[4],
+                                                (result[5] if result[5] is not None else result[6])]}
+                     for result in results]}
 
 def selectDataPoints(request):
-    dbConn = XbrlSemanticGraphDatabaseConnection(request)
-    results = dbConn.execute(u"Select Data Points", u"""
-        def _id = '""" + dbConn.id.strip() + u"""'
-        def n = g.v(_id)
-        if (!n) {
-            def e = g.e(_id)
-            if (e && e.label == 'rel')
-                n = e.inV.next()
-        }
-        def _class = n ? n._class : null
-        def result = 0
-        if (_class == 'data_point') {
-            result = n.id
-        } else {
-            def aspectProxyIt
-            if (_class == 'aspect_proxy') {
-                aspectProxyIt = n._()
-            } else if (_class == 'data_point') {
-                aspectProxyIt = n.out('base_item')
-            } else if (_class == 'relationship') {
-                aspectProxyIt = n.out('target')
-            } else if (_class == 'root') {
-                aspectProxyIt = n.out('aspect')
-            } else if (_class == 'message') {
-                aspectProxyIt = n.out('message_ref')
-            } else {
-                aspectProxyIt = n.out('proxy')
-            }
-            result = aspectProxyIt.hasNext() ? aspectProxyIt.next().in('base_item')[0].id : null
-        }
-        result
-    """)[u"results"]
+    dbConn = XbrlSemanticDatabaseConnection(request)
+    results = dbConn.execute("Select Data Points", """
+        SELECT
+        CASE WHEN (SELECT TRUE FROM data_point d, report r 
+                   WHERE aspect_id = {0} AND r.filing_id = {1} AND d.report_id = r.report_id)
+        THEN
+          (SELECT d.datapoint_id from data_point d, report r
+           WHERE aspect_id = {0} AND r.filing_id = {1} AND d.report_id = r.report_id)
+        ELSE (
+          CASE WHEN (SELECT TRUE FROM relationship rel, report r, data_point d 
+                     WHERE relationship_id = {0} AND rel.to_id = d.aspect_id AND d.report_id = r.report_id and r.filing_id = {1})
+          THEN (SELECT d.datapoint_id FROM relationship rel, report r, data_point d 
+                WHERE relationship_id = {0} AND rel.to_id = d.aspect_id AND d.report_id = r.report_id and r.filing_id = {1})
+          ELSE (
+            CASE WHEN (SELECT TRUE from data_point where datapoint_id = {0})
+            THEN {0}::bigint
+            ELSE 0::bigint
+            END
+          ) END
+        ) END
+        """.format(dbConn.id, dbConn.filingId))
     dbConn.close()
     return results
