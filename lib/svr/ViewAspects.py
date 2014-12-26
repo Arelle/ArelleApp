@@ -9,14 +9,18 @@ from XbrlSemanticDB import XbrlSemanticDatabaseConnection
 def viewAspects(request):
     dbConn = XbrlSemanticDatabaseConnection(request)
     results = dbConn.execute("View Aspects", """
-        SELECT a.aspect_id, '', a.name, a.period_type, a.balance, dt.name, a.base_type
-        FROM report r, aspect a, data_type dt
-        WHERE r.filing_id = {} AND 
+        {1} -- relationship set for labels
+        SELECT a.aspect_id, lbl.value, a.name, a.period_type, a.balance, dt.name, a.base_type
+        FROM report r, label_relationship_set lrs, aspect a, data_type dt,
+             relationship lrel, resource lbl
+        WHERE r.filing_id = {0} AND 
            (a.document_id = r.report_schema_doc_id OR
             a.document_id = r.standard_schema_doc_id) AND
-           dt.data_type_id = a.datatype_id
-        ORDER BY a.name 
-        """.format(dbConn.filingId))
+           dt.data_type_id = a.datatype_id AND
+           lrel.relationship_set_id = lrs.relationship_set_id AND lrel.from_id = a.aspect_id
+           AND lrel.to_id = lbl.resource_id AND lbl.role = 'http://www.xbrl.org/2003/role/label'
+        ORDER BY lbl.value, a.name 
+        """.format(dbConn.filingId, dbConn.withAspectLabelRelSetId))
     dbConn.close()
     return {"rows": [{"id": result[0], "data": result[1:]}
                      for result in results]}

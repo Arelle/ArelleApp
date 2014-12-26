@@ -9,14 +9,17 @@ from XbrlSemanticDB import XbrlSemanticDatabaseConnection, decompressResults
 def viewDataPoints(request):
     dbConn = XbrlSemanticDatabaseConnection(request)
     results = dbConn.execute("View Data Points", """
-        SELECT d.datapoint_id, a.name, d.source_line, d.context_xml_id, u.xml_id, d.effective_value, d.value 
+        {1} -- relationship set for labels
+        SELECT d.datapoint_id, lbl.value, d.source_line, d.context_xml_id, u.xml_id, d.effective_value, d.value 
         FROM report r
+        JOIN label_relationship_set lrs ON true
         JOIN data_point d ON r.filing_id = {0} AND 
             d.document_id = r.report_data_doc_id 
-        JOIN aspect a ON a.aspect_id = d.aspect_id
+        JOIN relationship lrel ON lrel.relationship_set_id = lrs.relationship_set_id AND lrel.from_id = d.aspect_id
+        JOIN resource lbl on lrel.to_id = lbl.resource_id and lbl.role = 'http://www.xbrl.org/2003/role/label'
         LEFT OUTER JOIN unit u ON u.unit_id = d.unit_id
         ORDER BY d.source_line 
-        """.format(dbConn.filingId))
+        """.format(dbConn.filingId, dbConn.withAspectLabelRelSetId))
     dbConn.close()
     return {"rows": [{"id": result[0], "data": [result[1], result[2], result[3], result[4],
                                                 (result[5] if result[5] is not None else result[6])]}

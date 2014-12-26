@@ -1,8 +1,11 @@
 
+parentChild = "http://www.xbrl.org/2003/arcrole/parent-child"
+summationItem = "http://www.xbrl.org/2003/arcrole/summation-item"
+conceptLabel = "http://www.xbrl.org/2003/arcrole/concept-label"
 
 stdRoleKeys = dict(
     (k,v)
-    for i, r in enumerate(
+    for i, r in enumerate((
          "http://www.xbrl.org/2003/role/label",
          "http://www.xbrl.org/2003/role/terseLabel",
          "http://www.xbrl.org/2003/role/verboseLabel",
@@ -50,6 +53,6 @@ stdRoleKeys = dict(
          "http://www.xbrl.org/2003/arcrole/general-special",
          "http://www.xbrl.org/2003/arcrole/essence-alias",
          "http://www.xbrl.org/2003/arcrole/similar-tuples",
-         "http://www.xbrl.org/2003/arcrole/requires-element")
+         "http://www.xbrl.org/2003/arcrole/requires-element"))
     for n in ("_r{0}".format(i))
     for k, v in ((n,r),(r,n)))
