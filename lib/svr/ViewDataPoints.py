@@ -30,15 +30,19 @@ def selectDataPoints(request):
     results = dbConn.execute("Select Data Points", """
         SELECT
         CASE WHEN (SELECT TRUE FROM data_point d, report r 
-                   WHERE aspect_id = {0} AND r.filing_id = {1} AND d.report_id = r.report_id)
+                   WHERE aspect_id = {0} AND r.filing_id = {1} AND d.report_id = r.report_id
+                   LIMIT 1)
         THEN
           (SELECT d.datapoint_id from data_point d, report r
-           WHERE aspect_id = {0} AND r.filing_id = {1} AND d.report_id = r.report_id)
+           WHERE aspect_id = {0} AND r.filing_id = {1} AND d.report_id = r.report_id
+           LIMIT 1)
         ELSE (
           CASE WHEN (SELECT TRUE FROM relationship rel, report r, data_point d 
-                     WHERE relationship_id = {0} AND rel.to_id = d.aspect_id AND d.report_id = r.report_id and r.filing_id = {1})
+                     WHERE relationship_id = {0} AND rel.to_id = d.aspect_id AND d.report_id = r.report_id and r.filing_id = {1}
+                     LIMIT 1)
           THEN (SELECT d.datapoint_id FROM relationship rel, report r, data_point d 
-                WHERE relationship_id = {0} AND rel.to_id = d.aspect_id AND d.report_id = r.report_id and r.filing_id = {1})
+                WHERE relationship_id = {0} AND rel.to_id = d.aspect_id AND d.report_id = r.report_id and r.filing_id = {1}
+                LIMIT 1)
           ELSE (
             CASE WHEN (SELECT TRUE from data_point where datapoint_id = {0})
             THEN {0}::bigint

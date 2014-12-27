@@ -39,12 +39,25 @@ def viewProperties(request):
           ) ELSE (
             CASE WHEN (SELECT TRUE from data_point where datapoint_id = {0})
             THEN (
-               SELECT (('aspect name', a.name),
+               SELECT (('name', a.name),
                        ('source line', d.source_line),
                        ('entity', e.identifier),
-                       ('start date', p.start_date),
-                       ('end date', p.end_date),
-                       ('value', d.value)) AS properties
+                       CASE WHEN p.is_instant
+                         THEN ('', '')
+                         ELSE ('start date', p.start_date)
+                         END,
+                       CASE WHEN p.is_instant
+                         THEN ('instant', p.end_date)
+                         ELSE ('end date', p.end_date)
+                         END,
+                       (SELECT ('dimensions',count(*))
+                         FROM aspect_value_selection avs
+                         WHERE avs.aspect_value_selection_id = d.aspect_value_selection_id),
+                       CASE WHEN d.is_nil
+                         THEN ('xsi:nil','true')
+                         ELSE ('value', d.value)
+                         END
+                       ) AS properties
                FROM data_point d, aspect a, entity_identifier e, period p
                WHERE d.datapoint_id = {0} AND
                      d.aspect_id = a.aspect_id AND
@@ -56,7 +69,6 @@ def viewProperties(request):
           ) END
         ) END
         """.format(dbConn.id, dbConn.id_parent))
-    dbConn.close()
     try:
         resultList = results[0][0]
         props = []
@@ -78,7 +90,25 @@ def viewProperties(request):
                     k = k[1:]
                 if v.endswith('"'):
                     v = v[:-1]
-                props.append({"id": n+1, "data": [k, v]})
+                if k: # skip empty list entries (like start date for an instant)
+                    _row = {"id": n+1, "data": [k, v]}
+                    props.append(_row)
+                    if k == 'dimensions' and v > "0":
+                        _dimRows = []
+                        _row["rows"] = _dimRows
+                        _dims = dbConn.execute("View Dimension Properties", """
+                            SELECT avs.aspect_value_selection_id, dim.name, mem.name
+                            FROM data_point d, aspect_value_selection avs,
+                                   aspect dim, aspect mem
+                            WHERE d.datapoint_id = {0} AND
+                                  avs.aspect_value_selection_id = d.aspect_value_selection_id AND
+                                  dim.aspect_id = avs.aspect_id AND
+                                  mem.aspect_id = avs.aspect_value_id
+                            """.format(dbConn.id))
+                        for _id, _dimName, _memName in _dims:
+                            _dimRows.append({"id":_id, "data":[_dimName, _memName]})
+        dbConn.close()
         return {"rows": props}
-    except Exception:
+    except Exception as ex:
+        dbConn.close()
         return None

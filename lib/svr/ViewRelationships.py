@@ -80,4 +80,32 @@ def viewRelationships(request):
     return docTree
 
 def selectRelationships(request):
-    return 0
+    dbConn = XbrlSemanticDatabaseConnection(request)
+    results = dbConn.execute("Select Aspects", """
+        WITH selected_aspect(aspect_id) as (
+           SELECT
+           CASE WHEN (SELECT TRUE FROM aspect WHERE aspect_id = {2})
+           THEN
+              {2}::bigint
+           ELSE (
+              CASE WHEN (SELECT TRUE from relationship where relationship_id = {2})
+              THEN (SELECT r.to_id FROM relationship r WHERE relationship_id = {2})
+              ELSE (
+                 CASE WHEN (SELECT TRUE from data_point where datapoint_id = {2})
+                 THEN (SELECT d.aspect_id from data_point d where datapoint_id = {2})
+                 ELSE 0::bigint
+                 END
+              ) END
+           ) END
+        )
+        SELECT rs.relationship_set_id || '_' || rel.relationship_id
+        FROM report r, relationship_set rs, relationship rel, selected_aspect sa
+        WHERE r.filing_id = {0}
+        AND rs.document_id = r.report_schema_doc_id
+        AND rs.arc_role = '{1}'
+        AND rel.relationship_set_id = rs.relationship_set_id 
+        AND rel.to_id = sa.aspect_id
+        LIMIT 1 -- only return first
+        """.format(dbConn.filingId, dbConn.arcrole, dbConn.id))
+    dbConn.close()
+    return results
