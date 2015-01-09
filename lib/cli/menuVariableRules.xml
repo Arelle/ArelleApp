@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<menu>
+	<item id="add_col" text="Add Variate Column"/>
+	<item id="remove_col" text="Remove Variate Column"/>
+	<item id="excel" text="Save as Excel"/>
+	<item id="pdf" text="Save as PDF"/>
+</menu>

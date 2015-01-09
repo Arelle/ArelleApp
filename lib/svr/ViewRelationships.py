@@ -11,19 +11,40 @@ import os
 def viewRelationships(request):
     dbConn = XbrlSemanticDatabaseConnection(request)
     _arcrole = dbConn.arcrole
+    if dbConn.filingId:
+        _fromReport = "report r,"
+        _whereDocument = """
+           r.filing_id = {filingId} AND
+           rt.document_id = r.report_schema_doc_id AND
+           rs.document_id = r.report_schema_doc_id
+           """.format(filingId=dbConn.filingId)
+    elif dbConn.documentId: # query from documentId
+        _fromReport = ""
+        _whereDocument = """
+           rt.document_id = {documentId} AND
+           rs.document_id = {documentId}
+           """.format(documentId=dbConn.documentId)
+    elif dbConn.documentUrl:
+        _fromReport = "document d,"
+        _whereDocument = """
+           d.document_url = '{documentUrl}' AND
+           rt.document_id = d.document_id AND
+           rs.document_id = d.document_id
+           """.format(documentUrl=dbConn.documentUrl)
+    else:
+        _fromReport = ""
+        _whereDocument = "FALSE"
     # tree roots before tree descendants of roots
     results = dbConn.execute("View Report", """
-        {2} -- relationship set for labels
+        {relSetForLabels} -- relationship set for labels
         -- get roots
         SELECT rs.relationship_set_id, rt.definition, rel.relationship_id, rel.tree_sequence, 
                0 AS tree_depth, rel.calculation_weight, a.aspect_id, lbl.value, a.balance, dt.name
-        FROM report r, role_type rt, relationship_set rs, relationship rel, aspect a, data_type dt,
+        FROM {fromReport} role_type rt, relationship_set rs, relationship rel, aspect a, data_type dt,
              label_relationship_set lrs, relationship lrel, resource lbl
-        WHERE r.filing_id = {0}
-        AND rt.document_id = r.report_schema_doc_id
-        AND rs.document_id = r.report_schema_doc_id
+        WHERE {whereDocument}
         AND rs.link_role = rt.role_uri
-        AND rs.arc_role = '{1}'
+        AND rs.arc_role = '{arcrole}'
         AND rel.relationship_set_id = rs.relationship_set_id 
         AND a.aspect_id = rel.from_id AND rel.tree_sequence = 1
         AND dt.data_type_id = a.datatype_id
@@ -32,13 +53,11 @@ def viewRelationships(request):
         UNION -- get descendants of root
         SELECT rs.relationship_set_id, rt.definition, rel.relationship_id, rel.tree_sequence, 
                rel.tree_depth, rel.calculation_weight, a.aspect_id, lbl.value, a.balance, dt.name
-        FROM report r, role_type rt, relationship_set rs, relationship rel, aspect a, data_type dt,
+        FROM {fromReport} role_type rt, relationship_set rs, relationship rel, aspect a, data_type dt,
              label_relationship_set lrs, relationship lrel, resource lbl
-        WHERE r.filing_id = {0}
-        AND rt.document_id = r.report_schema_doc_id
-        AND rs.document_id = r.report_schema_doc_id
+        WHERE {whereDocument}
         AND rs.link_role = rt.role_uri
-        AND rs.arc_role = '{1}'
+        AND rs.arc_role = '{arcrole}'
         AND rel.relationship_set_id = rs.relationship_set_id 
         AND a.aspect_id = rel.to_id
         AND dt.data_type_id = a.datatype_id
@@ -46,7 +65,10 @@ def viewRelationships(request):
         AND lrel.to_id = lbl.resource_id AND lbl.role = 'http://www.xbrl.org/2003/role/label'
         -- order by link role definition, sequence, and depth
         ORDER BY definition, tree_sequence, tree_depth
-        """.format(dbConn.filingId, dbConn.arcrole, dbConn.withAspectLabelRelSetId))
+        """.format(relSetForLabels=dbConn.withAspectLabelRelSetId,
+                   arcrole=dbConn.arcrole,
+                   fromReport=_fromReport,
+                   whereDocument=_whereDocument))
     dbConn.close()
     docTree = {"rows": []}
     parentSubtree = {}
@@ -81,31 +103,44 @@ def viewRelationships(request):
 
 def selectRelationships(request):
     dbConn = XbrlSemanticDatabaseConnection(request)
+    if dbConn.filingId:
+        _fromReport = "report r,"
+        _whereDocument = """
+            r.filing_id = {filingId} AND
+            rs.document_id = r.report_schema_doc_id
+            """.format(filingId=dbConn.filingId)
+    else: # query from documentId
+        _fromReport = ""
+        _whereDocument = """
+            rs.document_id = {documentId}
+            """.format(documentId=dbConn.documentId)
     results = dbConn.execute("Select Aspects", """
         WITH selected_aspect(aspect_id) as (
            SELECT
-           CASE WHEN (SELECT TRUE FROM aspect WHERE aspect_id = {2})
+           CASE WHEN (SELECT TRUE FROM aspect WHERE aspect_id = {objectId})
            THEN
-              {2}::bigint
+              {objectId}::bigint
            ELSE (
-              CASE WHEN (SELECT TRUE from relationship where relationship_id = {2})
-              THEN (SELECT r.to_id FROM relationship r WHERE relationship_id = {2})
+              CASE WHEN (SELECT TRUE from relationship where relationship_id = {objectId})
+              THEN (SELECT r.to_id FROM relationship r WHERE relationship_id = {objectId})
               ELSE (
-                 CASE WHEN (SELECT TRUE from data_point where datapoint_id = {2})
-                 THEN (SELECT d.aspect_id from data_point d where datapoint_id = {2})
+                 CASE WHEN (SELECT TRUE from data_point where datapoint_id = {objectId})
+                 THEN (SELECT d.aspect_id from data_point d where datapoint_id = {objectId})
                  ELSE 0::bigint
                  END
               ) END
            ) END
         )
         SELECT rs.relationship_set_id || '_' || rel.relationship_id
-        FROM report r, relationship_set rs, relationship rel, selected_aspect sa
-        WHERE r.filing_id = {0}
-        AND rs.document_id = r.report_schema_doc_id
-        AND rs.arc_role = '{1}'
+        FROM {fromReport} relationship_set rs, relationship rel, selected_aspect sa
+        WHERE {whereDocument}
+        AND rs.arc_role = '{arcrole}'
         AND rel.relationship_set_id = rs.relationship_set_id 
         AND rel.to_id = sa.aspect_id
         LIMIT 1 -- only return first
-        """.format(dbConn.filingId, dbConn.arcrole, dbConn.id))
+        """.format(fromReport=_fromReport,
+                   whereDocument=_whereDocument, 
+                   arcrole=dbConn.arcrole, 
+                   objectId=dbConn.id))
     dbConn.close()
     return results

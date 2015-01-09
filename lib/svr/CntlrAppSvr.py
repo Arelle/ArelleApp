@@ -12,11 +12,13 @@ from optparse import OptionParser, SUPPRESS_HELP
 from webserver.bottle import route, get, post, request, response, run, static_file
 import Version
 import logging
+libDir = None
 cliDir = None
 imagesDir = None
 uiDir = None
 hasFileSystem = True
 isGAE = False
+isCGI = False
 _os_pid = os.getpid()
 __version__ = "1.0.0"
 
@@ -33,16 +35,24 @@ def main():
     else:
         args = None # defaults to sys.argv[1:]
         
-    global cliDir, imagesDir, uiDir, hasFileSystem, isGAE
-    libDir = os.path.dirname(os.path.dirname(__file__))
-    cliDir = os.path.join(libDir, u'cli')
-    imagesDir = os.path.join(cliDir, u"images")
-    uiDir = os.path.join(libDir, u"UI")
+    global libDir, cliDir, imagesDir, uiDir, hasFileSystem, isGAE, isCGI
 
+    libDir = None
     serverSoftware = os.getenv("SERVER_SOFTWARE", "")
     if serverSoftware.startswith("Google App Engine/") or serverSoftware.startswith("Development/"):
         hasFileSystem = False # no file system, userAppDir does not exist
         isGAE = True
+    else:
+        gatewayInterface = os.getenv("GATEWAY_INTERFACE", "")
+        if gatewayInterface.startswith("CGI/"):
+            isCGI = True
+            libDir = os.path.join(os.path.dirname(sys.argv[0]), u'lib')
+
+    if not libDir:
+        libDir = os.path.dirname(os.path.dirname(__file__))
+    cliDir = os.path.join(libDir, u'cli')
+    imagesDir = os.path.join(cliDir, u"images")
+    uiDir = os.path.join(libDir, u"UI")
     
     usage = u"usage: %prog [options]"
     
@@ -72,8 +82,11 @@ def main():
                       action="store_true", dest="about",
                       help="Show product version, copyright, and license.")
     
-    if args is None and isGAE:
-        args = ["--webserver=::gae"]
+    if args is None:
+        if isGAE:
+            args = ["--webserver=::gae"]
+        elif isCGI:
+            args = ["--webserver=::cgi"]
         
     (options, leftoverArgs) = parser.parse_args(args)
     if options.about:
@@ -120,9 +133,10 @@ def image():
     
     :returns: file -- Requested file from cli directory of application for browsers
     """
-    return static_file(u'cli_index.html', root=cliDir)
+    return static_file(u'index.html', root=libDir)
 
 @route(u'/lib/cli/<cliFile:path>')
+@route(u'/cli/<cliFile:path>')
 def ckiPath(cliFile):
     """Request for an cli file(get */lib/cli/<cliPath>*).
     
@@ -131,6 +145,7 @@ def ckiPath(cliFile):
     return static_file(cliFile, root=cliDir)
 
 @route(u'/lib/UI/<uiFilePath:path>')
+@route(u'/UI/<uiFilePath:path>')
 def uiFile(uiFilePath):
     """Request for an UI File file for URL display (get */images/<imgFile>*).
     
@@ -147,6 +162,11 @@ from ViewFilings import viewFilings
 @route(u'/grid/filings')
 def gridFilings():
     return jsonResults(viewFilings)
+
+from ViewDocuments import viewDocuments
+@route(u'/grid/documents')
+def gridDocuments():
+    return jsonResults(viewDocuments)
 
 from ViewDTS import viewDTS
 @route(u'/grid/DTS')
@@ -187,6 +207,36 @@ def _viewRelationships():
 def _selectRelationships():
     return jsonResults(selectRelationships)
 
+from ViewMultivariate import viewMultivariateRules, selectMultivariateRules
+@route(u'/grid/multivariateRules')
+def _viewMultivariateRules():
+    return jsonResults(viewMultivariateRules)
+@route(u'/select/multivariateRules')
+def _selectMultivariateRules():
+    return jsonResults(selectMultivariateRules)
+
+from ViewMultivariate import viewMultivariateFilings, selectMultivariateFilings
+@route(u'/grid/multivariateFilings')
+def _viewMultivariateFilings():
+    return jsonResults(viewMultivariateFilings)
+@route(u'/select/multivariateFilings')
+def _selectMultivariateFilings():
+    return jsonResults(selectMultivariateFilings)
+
+from ViewMultivariate import viewMultivariateProperties
+@route(u'/view/multivariateProperties')
+def _viewMultivariateProperties():
+    return jsonResults(viewMultivariateProperties)
+
+
+
+from ViewMultivariate import viewMultivariateGrid, selectMultivariateGrid
+@route(u'/grid/multivariateGrid')
+def _viewMultivariateGrid():
+    return jsonResults(viewMultivariateGrid)
+@route(u'/select/multivariateGrid')
+def _selectMultivariateGrid():
+    return jsonResults(selectMultivariateGrid)
 
 @route('/rest/stopWebServer')
 def stopWebServer():

@@ -13,7 +13,7 @@ def viewDTS(request):
         WITH RECURSIVE doc_graph(parent_doc_id, child_doc_id, depth, path, cycle) as (
            SELECT 0::bigint, r.report_data_doc_id, 1, ARRAY[r.report_data_doc_id], false
            FROM report r
-           WHERE r.filing_id = {}
+           WHERE r.filing_id = {filingId}
         UNION ALL
            SELECT rd.object_id, rd.document_id,
                   dg.depth + 1, 
@@ -24,7 +24,7 @@ def viewDTS(request):
         )
         SELECT dg.parent_doc_id, dg.child_doc_id, d.document_url, d.document_type FROM doc_graph dg
         JOIN document d on dg.child_doc_id = d.document_id 
-        """.format(dbConn.filingId))
+        """.format(filingId=dbConn.filingId))
     dbConn.close()
     docTree = {"rows": []}
     parentSubtree = {0: docTree}

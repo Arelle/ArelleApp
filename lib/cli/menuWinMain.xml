@@ -2,7 +2,11 @@
 <menu>
 	<item id="file" text="File">
 		<item id="connect" text="Connect to database"/>
-		<item id="open" text="Open"/>
+		<item id="open_submenu" text="Open">
+			<item id="open_filing" text="Filing"/>
+			<item id="open_document" text="Document"/>
+			<item id="open_multivariate" text="Multivariate"/>
+		</item>
 		<item id="file_sep_3" type="separator"/>
 		<item id="close" text="Close"/>
 	</item>

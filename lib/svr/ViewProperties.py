@@ -10,7 +10,7 @@ def viewProperties(request):
     dbConn = XbrlSemanticDatabaseConnection(request)
     results = dbConn.execute("View Properties", """
         SELECT
-        CASE WHEN (SELECT TRUE FROM aspect WHERE aspect_id = {0})
+        CASE WHEN (SELECT TRUE FROM aspect WHERE aspect_id = {objectId})
         THEN (
           SELECT (('aspect name', a.name),
                   ('period type', a.period_type),
@@ -18,9 +18,9 @@ def viewProperties(request):
                   ('data type', dt.name),
                   ('base type', a.base_type)) AS properties
           FROM aspect a, data_type dt 
-          WHERE aspect_id = {0} AND dt.data_type_id = a.datatype_id
+          WHERE aspect_id = {objectId} AND dt.data_type_id = a.datatype_id
         ) ELSE (
-          CASE WHEN (SELECT TRUE from relationship where relationship_id = {0})
+          CASE WHEN (SELECT TRUE from relationship where relationship_id = {objectId})
           THEN (
             SELECT (('aspect name', a.name),
                     ('period type', a.period_type),
@@ -32,12 +32,12 @@ def viewProperties(request):
                     ('arcrole', rs.arc_role),
                     ('preferred lbl', r.preferred_label_role)) AS properties
             FROM relationship_set rs, role_type rt, relationship r, aspect a, data_type dt 
-            WHERE rs.relationship_set_id = {1} AND
-                  r.relationship_id = {0} AND
+            WHERE rs.relationship_set_id = {parentId} AND
+                  r.relationship_id = {objectId} AND
                   rt.document_id = rs.document_id AND rs.link_role = rt.role_uri AND
                   a.aspect_id = r.to_id AND dt.data_type_id = a.datatype_id
           ) ELSE (
-            CASE WHEN (SELECT TRUE from data_point where datapoint_id = {0})
+            CASE WHEN (SELECT TRUE from data_point where datapoint_id = {objectId})
             THEN (
                SELECT (('name', a.name),
                        ('source line', d.source_line),
@@ -59,7 +59,7 @@ def viewProperties(request):
                          END
                        ) AS properties
                FROM data_point d, aspect a, entity_identifier e, period p
-               WHERE d.datapoint_id = {0} AND
+               WHERE d.datapoint_id = {objectId} AND
                      d.aspect_id = a.aspect_id AND
                      p.period_id = d.period_id AND
                      e.entity_identifier_id = d.entity_identifier_id
@@ -68,11 +68,11 @@ def viewProperties(request):
             ) END
           ) END
         ) END
-        """.format(dbConn.id, dbConn.id_parent))
+        """.format(objectId=dbConn.id, parentId=dbConn.id_parent))
     try:
         resultList = results[0][0]
         props = []
-        if resultList.startswith('(') and resultList.endswith(')'):
+        if resultList and resultList.startswith('(') and resultList.endswith(')'):
             strLists = resultList[1:-1].split(')","(')
             for n, strList in enumerate(strLists):
                 if strList.startswith('"('):
@@ -97,16 +97,17 @@ def viewProperties(request):
                         _dimRows = []
                         _row["rows"] = _dimRows
                         _dims = dbConn.execute("View Dimension Properties", """
-                            SELECT avs.aspect_value_selection_id, dim.name, mem.name
+                            SELECT avs.aspect_value_selection_id, dim.aspect_id, dim.name, mem.name
                             FROM data_point d, aspect_value_selection avs,
                                    aspect dim, aspect mem
-                            WHERE d.datapoint_id = {0} AND
+                            WHERE d.datapoint_id = {objectId} AND
                                   avs.aspect_value_selection_id = d.aspect_value_selection_id AND
                                   dim.aspect_id = avs.aspect_id AND
                                   mem.aspect_id = avs.aspect_value_id
-                            """.format(dbConn.id))
-                        for _id, _dimName, _memName in _dims:
-                            _dimRows.append({"id":_id, "data":[_dimName, _memName]})
+                            """.format(objectId=dbConn.id))
+                        for _avsId, _dimId, _dimName, _memName in _dims:
+                            _dimRows.append({"id":"{}_{}".format(_avsId, _dimId), 
+                                             "data":[_dimName, _memName]})
         dbConn.close()
         return {"rows": props}
     except Exception as ex:

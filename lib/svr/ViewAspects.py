@@ -8,19 +8,39 @@ from XbrlSemanticDB import XbrlSemanticDatabaseConnection
 
 def viewAspects(request):
     dbConn = XbrlSemanticDatabaseConnection(request)
-    results = dbConn.execute("View Aspects", """
-        {1} -- relationship set for labels
-        SELECT a.aspect_id, lbl.value, a.name, a.period_type, a.balance, dt.name, a.base_type
-        FROM report r, label_relationship_set lrs, aspect a, data_type dt,
-             relationship lrel, resource lbl
-        WHERE r.filing_id = {0} AND 
+    if dbConn.filingId:
+        _fromReport = "report r,"
+        _whereDocument = """
+           r.filing_id = {filingId} AND 
            (a.document_id = r.report_schema_doc_id OR
-            a.document_id = r.standard_schema_doc_id) AND
+            a.document_id = r.standard_schema_doc_id)
+           """.format(filingId=dbConn.filingId)
+    elif dbConn.documentId: # query from documentId
+        _fromReport = ""
+        _whereDocument = """
+           a.document_id = {documentId}
+           """.format(documentId=dbConn.documentId)
+    elif dbConn.documentUrl:
+        _fromReport = "document d,"
+        _whereDocument = """
+           d.document_url = '{documentUrl}' 
+           """.format(documentUrl=dbConn.documentUrl)
+    else:
+        _fromReport = ""
+        _whereDocument = "FALSE"
+    results = dbConn.execute("View Aspects", """
+        {relSetForLabels} -- relationship set for labels
+        SELECT a.aspect_id, lbl.value, a.name, a.period_type, a.balance, dt.name, a.base_type
+        FROM {fromReport} label_relationship_set lrs, aspect a, data_type dt,
+             relationship lrel, resource lbl
+        WHERE {whereDocument} AND
            dt.data_type_id = a.datatype_id AND
            lrel.relationship_set_id = lrs.relationship_set_id AND lrel.from_id = a.aspect_id
            AND lrel.to_id = lbl.resource_id AND lbl.role = 'http://www.xbrl.org/2003/role/label'
         ORDER BY lbl.value, a.name 
-        """.format(dbConn.filingId, dbConn.withAspectLabelRelSetId))
+        """.format(relSetForLabels=dbConn.withAspectLabelRelSetId,
+                   fromReport=_fromReport,
+                   whereDocument=_whereDocument))
     dbConn.close()
     return {"rows": [{"id": result[0], "data": result[1:]}
                      for result in results]}

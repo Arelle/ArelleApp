@@ -11,9 +11,9 @@ def viewMessages(request):
     results = dbConn.execute("View Filings", """
         SELECT m.message_id, m.sequence_in_report, m.message_code, m.message_level, m.value
         FROM report r, message m
-        WHERE r.filing_id = {} AND m.report_id = r.report_id
+        WHERE r.filing_id = {filingId} AND m.report_id = r.report_id
         ORDER BY m.sequence_in_report 
-        """.format(dbConn.filingId))
+        """.format(filingId=dbConn.filingId))
     dbConn.close()
     return {"rows": [{"id": result[0], "data": result[1:]}
                      for result in results]}

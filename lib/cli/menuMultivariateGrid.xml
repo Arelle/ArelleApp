@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<menu>
+	<item id="remove_col" text="Remove Variate Column"/>
+	<item id="add_row" text="Add Filing Row"/>
+	<item id="remove_row" text="Remove Filing Row"/>
+	<item id="show_heatmap" text="Show Heatmap" type="checkbox"/>
+	<item id="excel" text="Save as Excel"/>
+	<item id="pdf" text="Save as PDF"/>
+</menu>
