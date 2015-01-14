@@ -35,7 +35,7 @@ def selectMultivariateRules(request):
 def viewMultivariateFilings(request):
     dbConn = XbrlSemanticDatabaseConnection(request)
     results = dbConn.execute("View Multivariate Filings", """
-        SELECT f.filing_id, f.filing_number, e.name, f.accepted_timestamp, f.entry_url, e.standard_industry_code, f.creation_software 
+        SELECT f.filing_id, f.filing_number, e.name, f.form_type, f.accepted_timestamp, f.entry_url, e.standard_industry_code, f.creation_software 
         FROM entity e, filing f, report r 
         WHERE r.filing_id in ({filingIds}) AND f.entity_id = e.entity_id AND f.filing_id = r.filing_id
         """.format(filingIds=dbConn.request.query.filingIds or 0))
@@ -73,6 +73,7 @@ def viewMultivariateGrid(request):
                 (SELECT SUM(d.effective_value) 
                 FROM _fsbm_to_ugt f2u, aspect a, data_point d
                 WHERE d.report_id = r.report_id
+                    AND d.context_xml_id = default_cntx.context_xml_id
                     AND f2u.cname = '{variable}'
                     AND a.aspect_id = d.aspect_id
                     AND a.name = f2u.uname)
@@ -84,9 +85,12 @@ def viewMultivariateGrid(request):
     results = dbConn.execute("View Multivariate Filings", """
         SELECT f.filing_id, (e.name || ' - ' || f.filing_number || ' - ' || f.accepted_timestamp)
                {colSelects}
-        FROM entity e, filing f, report r 
+        FROM entity e, filing f, report r, data_point default_cntx, aspect aspect_doc_per_end_date
         WHERE r.filing_id in ({filingIds}) AND f.entity_id = e.entity_id AND f.filing_id = r.filing_id
-        GROUP BY f.filing_id, e.name, r.report_id        
+        AND default_cntx.report_id = r.report_id 
+        AND aspect_doc_per_end_date.aspect_id = default_cntx.aspect_id 
+        AND aspect_doc_per_end_date.name = 'DocumentPeriodEndDate'
+        GROUP BY f.filing_id, e.name, r.report_id, default_cntx.context_xml_id   
         """.format(filingIds=dbConn.request.query.filingIds or '0',
                    colSelects=_colSelects))
     dbConn.close()
@@ -108,10 +112,18 @@ def selectMultivariateGrid(request):
 def viewMultivariateProperties(request):
     dbConn = XbrlSemanticDatabaseConnection(request)
     results = dbConn.execute("Select Filings", """
-       select f2u.uname || '[' || d.context_xml_id || ']', d.effective_value
-        FROM entity e, filing f, report r, _fsbm_to_ugt f2u, aspect a, data_point d 
+       WITH default_cntx(context_xml_id) as (
+          SELECT d.context_xml_id from entity e, filing f, report r, aspect a, data_point d
+          WHERE r.filing_id = '{filingId}' AND f.entity_id = e.entity_id AND f.filing_id = r.filing_id
+          AND d.report_id = r.report_id
+          AND a.aspect_id = d.aspect_id
+          AND a.name = 'DocumentPeriodEndDate'
+          LIMIT 1)
+       SELECT f2u.uname || '[' || d.context_xml_id || ']', d.effective_value
+        FROM entity e, filing f, report r, _fsbm_to_ugt f2u, aspect a, data_point d, default_cntx 
         WHERE r.filing_id = '{filingId}' AND f.entity_id = e.entity_id AND f.filing_id = r.filing_id
         AND d.report_id = r.report_id
+        AND d.context_xml_id = default_cntx.context_xml_id
         AND f2u.cname = '{name}'
         AND a.aspect_id = d.aspect_id
         AND a.name = f2u.uname

@@ -13,6 +13,11 @@
 	<item id="sep_top_1" type="separator"/>
 	<item id="tools" text="Tools">
 	</item>
+	<item id="test" text="Test">
+		<item id="test_multivariate_submenu" text="Multivariate">
+			<item id="test_multivariate_COST2014sample" text="COST for 2014 WHDS sample"/>
+		</item>
+	</item>
 	<item id="help" text="Help">
 		<item id="about" text="About..."/>
 	</item>

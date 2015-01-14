@@ -228,6 +228,11 @@ from ViewMultivariate import viewMultivariateProperties
 def _viewMultivariateProperties():
     return jsonResults(viewMultivariateProperties)
 
+from ViewTest import viewTest
+@route(u'/grid/testCase')
+def _viewTest():
+    return jsonResults(viewTest)
+
 
 
 from ViewMultivariate import viewMultivariateGrid, selectMultivariateGrid

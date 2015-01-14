@@ -107,18 +107,6 @@ class XbrlSemanticDatabaseConnection:
         return self.request.query.arcrole
 
     @property
-    def filing(self):
-        return self.request.query.filing
-
-    @property
-    def name(self):
-        return self.request.query.name
-
-    @property
-    def date(self):
-        return self.request.query.date
-
-    @property
     def documentUrl(self):
         return self.request.query.documentUrl
 
@@ -129,10 +117,6 @@ class XbrlSemanticDatabaseConnection:
     @property
     def namespace(self):
         return self.request.query.namespace
-
-    @property
-    def sic(self):
-        return self.request.query.sic
 
     def close(self, rollback=False):
         try:

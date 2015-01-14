@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<menu>
+	<item id="excel" text="Save as Excel"/>
+	<item id="pdf" text="Save as PDF"/>
+</menu>

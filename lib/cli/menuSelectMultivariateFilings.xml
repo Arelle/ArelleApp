@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<menu>
+	<item id="open_all" text="Open all filings"/>
+	<item id="open_selected" text="Open selected filings"/>
+	<item id="open_clicked" text="Open clicked filing"/>
+</menu>
