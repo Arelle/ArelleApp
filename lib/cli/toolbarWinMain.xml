@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <toolbar>
-	<item id="openDatabaseChooser" type="button" img="toolbarOpenDatabaseFolder.gif"/>
-	<item id="openDatabaseTable" type="button" img="toolbarOpenDatabaseTable.gif"/>
-	<item id="close" type="button" img="toolbarClose.gif"/>
+	<item id="openDatabaseChooser" type="button" img="toolbarOpenDatabaseFolder.gif" title="Open Single Filing"/>
+	<item id="openDatabaseTable" type="button" img="toolbarOpenDatabaseTable.gif" title="Open Multivariate Grid"/>
+	<item id="close" type="button" img="toolbarClose.gif" title="Close Last Opened Filing/Grid"/>
 </toolbar>

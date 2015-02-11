@@ -1,9 +1,17 @@
 <?xml version="1.0"?>
 <menu>
-	<item id="remove_col" text="Remove Variate Column"/>
-	<item id="add_row" text="Add Filing Row"/>
-	<item id="remove_row" text="Remove Filing Row"/>
-	<item id="show_heatmap" text="Show Heatmap" type="checkbox"/>
-	<item id="excel" text="Save as Excel"/>
-	<item id="pdf" text="Save as PDF"/>
+    <item id="grid_items" text="Grid">
+		<item id="remove_col" text="Remove Variate Column"/>
+		<item id="add_row" text="Add Filing Row"/>
+		<item id="remove_row" text="Remove Filing Row"/>
+		<item id="show_heatmap" text="Show Heatmap" type="checkbox"/>
+	</item>
+	<item id="open items" text="Open Filing">
+	    <item id="open_filing_html" text="HTML"/>
+	    <item id="open_filing_xbrl" text="XBRL"/>
+	</item>
+	<item id="save_as" text="Save as">
+	    <item id="excel" text="Excel"/>
+	    <item id="pdf" text="PDF"/>
+	</item>
 </menu>
