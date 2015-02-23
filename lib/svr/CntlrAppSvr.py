@@ -135,6 +135,14 @@ def image():
     """
     return static_file(u'index.html', root=libDir)
 
+@route(u'/508.html')
+def image():
+    """Request for 508-compatible cli index file(get */lib/cli/508_index.html).
+    
+    :returns: file -- Requested file from cli directory of application for browsers
+    """
+    return static_file(u'508.html', root=libDir)
+
 @route(u'/lib/cli/<cliFile:path>')
 @route(u'/cli/<cliFile:path>')
 def ckiPath(cliFile):

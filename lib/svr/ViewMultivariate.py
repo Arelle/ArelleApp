@@ -47,10 +47,25 @@ def viewMultivariateFilings(request):
 
 def selectMultivariateFilings(request):
     dbConn = XbrlSemanticDatabaseConnection(request)
-    results = dbConn.execute("Select Filings", """
-        SELECT {filingId}
-        LIMIT 1
-        """.format(filingId=dbConn.request.query.filingId or 0))
+    if ("selectHtmlUrl" in dbConn.request.query):
+        results = dbConn.execute("Select Filing HTML URL", """
+            SELECT f.authority_html_url, (e.name || ' - ' || f.filing_number || ' - ' || f.accepted_timestamp)
+            FROM filing f, entity e
+            WHERE f.filing_id = {filingId} AND e.entity_id = f.entity_id
+            LIMIT 1
+            """.format(filingId=dbConn.request.query.filingId or 0))
+    elif ("selectXbrlUrl" in dbConn.request.query):
+        results = dbConn.execute("Select Filing XBRL ENTRY URL", """
+            SELECT f.entry_url 
+            FROM filing f
+            WHERE f.filing_id = {filingId}
+            LIMIT 1
+            """.format(filingId=dbConn.request.query.filingId or 0))
+    else:
+        results = dbConn.execute("Select Filings", """
+            SELECT {filingId}
+            LIMIT 1
+            """.format(filingId=dbConn.request.query.filingId or 0))
     dbConn.close()
     return results
 
