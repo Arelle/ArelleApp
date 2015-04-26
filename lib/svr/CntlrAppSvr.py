@@ -169,7 +169,9 @@ def testDBconnection():
 from ViewFilings import viewFilings
 @route(u'/grid/filings')
 def gridFilings():
-    return jsonResults(viewFilings)
+    _result = jsonResults(viewFilings)
+    # print ("{}".format(_result))
+    return _result
 
 from ViewDocuments import viewDocuments
 @route(u'/grid/documents')
@@ -246,10 +248,14 @@ def _viewTest():
 from ViewMultivariate import viewMultivariateGrid, selectMultivariateGrid
 @route(u'/grid/multivariateGrid')
 def _viewMultivariateGrid():
-    return jsonResults(viewMultivariateGrid)
+    _result = jsonResults(viewMultivariateGrid)
+    # print ("{}".format(_result))
+    return _result
 @route(u'/select/multivariateGrid')
-def _selectMultivariateGrid():
-    return jsonResults(selectMultivariateGrid)
+def _selectMultivariateGrid():  
+    _result = jsonResults(selectMultivariateGrid)
+    # print ("{}".format(_result))
+    return _result
 
 @route('/rest/stopWebServer')
 def stopWebServer():
@@ -399,6 +405,7 @@ def jsonResults(jsonCompositionFunction):
         response.content_type = u'application/json; charset=UTF-8'
         return json.dumps( jsonResults, default=jsonSerializer )
     except Exception as ex:
+        print ("Exception {}".format(str(ex)))
         return errorReport([str(ex)])
     
 if __name__ == "__main__":
