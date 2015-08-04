@@ -103,6 +103,7 @@ def viewRelationships(request):
 
 def selectRelationships(request):
     dbConn = XbrlSemanticDatabaseConnection(request)
+    _id = dbConn.id.rpartition(":")[2]
     if dbConn.filingId:
         _fromReport = "report r,"
         _whereDocument = """
@@ -141,6 +142,6 @@ def selectRelationships(request):
         """.format(fromReport=_fromReport,
                    whereDocument=_whereDocument, 
                    arcrole=dbConn.arcrole, 
-                   objectId=dbConn.id))
+                   objectId=_id))
     dbConn.close()
     return results

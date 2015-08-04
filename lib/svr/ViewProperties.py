@@ -8,6 +8,8 @@ from XbrlSemanticDB import XbrlSemanticDatabaseConnection, decompressResults
 
 def viewProperties(request):
     dbConn = XbrlSemanticDatabaseConnection(request)
+    _id = dbConn.id.rpartition(":")[2]
+    _id_parent = dbConn.id_parent.rpartition(":")[2]
     results = dbConn.execute("View Properties", """
         SELECT
         CASE WHEN (SELECT TRUE FROM aspect WHERE aspect_id = {objectId})
@@ -68,7 +70,7 @@ def viewProperties(request):
             ) END
           ) END
         ) END
-        """.format(objectId=dbConn.id, parentId=dbConn.id_parent))
+        """.format(objectId=_id, parentId=_id_parent))
     try:
         resultList = results[0][0]
         props = []
@@ -104,7 +106,7 @@ def viewProperties(request):
                                   avs.aspect_value_selection_id = d.aspect_value_selection_id AND
                                   dim.aspect_id = avs.aspect_id AND
                                   mem.aspect_id = avs.aspect_value_id
-                            """.format(objectId=dbConn.id))
+                            """.format(objectId=_id))
                         for _avsId, _dimId, _dimName, _memName in _dims:
                             _dimRows.append({"id":"{}_{}".format(_avsId, _dimId), 
                                              "data":[_dimName, _memName]})

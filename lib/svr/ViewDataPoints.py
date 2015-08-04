@@ -28,6 +28,7 @@ def viewDataPoints(request):
 
 def selectDataPoints(request):
     dbConn = XbrlSemanticDatabaseConnection(request)
+    _id = dbConn.id.rpartition(":")[2]
     results = dbConn.execute("Select Data Points", """
         SELECT
         CASE WHEN (SELECT TRUE FROM data_point d, report r 
@@ -61,6 +62,6 @@ def selectDataPoints(request):
             END
           ) END
         ) END
-        """.format(objectId=dbConn.id, filingId=dbConn.filingId))
+        """.format(objectId=_id, filingId=dbConn.filingId))
     dbConn.close()
     return results

@@ -47,6 +47,7 @@ def viewAspects(request):
 
 def selectAspects(request):
     dbConn = XbrlSemanticDatabaseConnection(request)
+    _id = dbConn.id.rpartition(":")[2]
     results = dbConn.execute("Select Aspects", """
         SELECT
         CASE WHEN (SELECT TRUE FROM aspect WHERE aspect_id = {0})
@@ -62,6 +63,6 @@ def selectAspects(request):
             END
           ) END
         ) END
-        """.format(dbConn.id))
+        """.format(_id))
     dbConn.close()
     return results
