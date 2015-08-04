@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<menu>
+	<item id="file" text="File">
+		<item id="connect" text="Connect to database"/>
+		<item id="open_submenu" text="Open">
+			<item id="open_filing" text="Filing"/>
+		</item>
+		<item id="file_sep_3" type="separator"/>
+		<item id="close" text="Close"/>
+	</item>
+	<item id="sep_top_1" type="separator"/>
+	<item id="tools" text="Tools">
+	</item>
+	<item id="help" text="Help">
+		<item id="about" text="About..."/>
+	</item>
+</menu>

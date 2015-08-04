@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<toolbar>
+	<item id="openDatabaseChooser" type="button" img="toolbarOpenDatabaseFolder.gif" text= "Open Filing" title="Open Single Filing from Database of SEC filings"/>
+	<item id="openZipUploader" type="button" img="toolbarZipFile.gif" text= "Upload Filing" title="Upload Filing Zip for private DQC testing"/>
+	<item id="close" type="button" img="toolbarClose.gif" text="Close Filing" title="Close Last Opened Filing/Grid"/>
+</toolbar>
