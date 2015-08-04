@@ -143,6 +143,14 @@ def image():
     """
     return static_file(u'508.html', root=libDir)
 
+@route(u'/DQC.html')
+def image():
+    """Request for 508-compatible cli index file(get */lib/cli/508_index.html).
+    
+    :returns: file -- Requested file from cli directory of application for browsers
+    """
+    return static_file(u'DQC.html', root=libDir)
+
 @route(u'/lib/cli/<cliFile:path>')
 @route(u'/cli/<cliFile:path>')
 def ckiPath(cliFile):
@@ -161,17 +169,29 @@ def uiFile(uiFilePath):
     """
     return static_file(uiFilePath, root=uiDir)
 
+@route(u'/lib/<libFilePath:path>')
+def image(libFilePath):
+    """Request for 508-compatible cli index file(get */lib/cli/508_index.html).
+    
+    :returns: file -- Requested file from cli directory of application for browsers
+    """
+    return static_file(libFilePath, root=libDir)
+
 from XbrlSemanticDB import testConnection
 @route(u'/testDBconnection')
 def testDBconnection():
     return jsonResults(testConnection)
 
-from ViewFilings import viewFilings
+from ViewFilings import viewFilings, getPrimaryDocument
 @route(u'/grid/filings')
 def gridFilings():
     _result = jsonResults(viewFilings)
     # print ("{}".format(_result))
     return _result
+@route(u'/filing/primaryDocument')
+def _getFilingPrimaryDocument():
+    response.content_type = u'text/html; charset=UTF-8'
+    return getPrimaryDocument(request)
 
 from ViewDocuments import viewDocuments
 @route(u'/grid/documents')
@@ -203,6 +223,11 @@ from ViewMessages import viewMessages
 @route(u'/grid/messages')
 def _viewMessages():
     return jsonResults(viewMessages)
+
+from ViewMessages import viewDQCmessages
+@route(u'/grid/DQCmessages')
+def _viewDQCmessages():
+    return jsonResults(viewDQCmessages)
 
 from ViewProperties import viewProperties
 @route(u'/grid/properties')
@@ -242,8 +267,6 @@ from ViewTest import viewTest
 @route(u'/grid/testCase')
 def _viewTest():
     return jsonResults(viewTest)
-
-
 
 from ViewMultivariate import viewMultivariateGrid, selectMultivariateGrid
 @route(u'/grid/multivariateGrid')

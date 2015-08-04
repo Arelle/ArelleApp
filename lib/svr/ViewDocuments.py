@@ -40,3 +40,5 @@ def viewDocuments(request):
     dbConn.close()
     return {"rows": [{"id": result[0], "data": result[1:]}
                      for result in results]}
+
+            
