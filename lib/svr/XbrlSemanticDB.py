@@ -50,8 +50,25 @@ def testConnection(request):
 class XbrlSemanticDatabaseConnection:
     def __init__(self, request):
         self.request = request
-        connection = unquote(request.get_cookie("rlConnection",default=""))
-        host, port, user, password, database, timeout = b64decode(connection.encode('utf-8')).decode('utf-8').split("|")
+        try:
+            connection = unquote(request.get_cookie("rlConnection",default=""))
+            if connection:
+                _connParams = b64decode(connection.encode('utf-8')).decode('utf-8').split("|")
+            else:
+                raise Exception("Connection not opened, please open a connection.")
+        except Exception:
+            # some places (like SEC) refuse cookies
+            _connParams = ["rltest.markv.com", "8084", "DQCguest", "guest", "debug3_db", ""]
+        host = port = user = password = database = timeout = ""
+        try:
+            host = _connParams[0]
+            port = _connParams[1]
+            user = _connParams[2]
+            password = _connParams[3]
+            database = _connParams[4]
+            timeout = _connParams[5]
+        except IndexError:
+            pass # accept short arrays of connection parameters
         if timeout:
             try:
                 timeout = int(timeout)
